@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const { Product, Category, Tag, ProductTag } = require('../../models');
+const sequelize = require('../../config/connection');
 
 // The `/api/products` endpoint
 
@@ -9,7 +10,17 @@ router.get('/', async (req, res) => {
   try {
     const productData = await Product.findAll({
       // including associated categories and tags through the ProductTag model/table
-      include: [{ model: Category, model: Tag, through: ProductTag, as: "product_tags" }]
+      include: [{ model: Category, model: Tag, through: ProductTag, as: "tags" }],
+      attributes: {
+        include: [
+          [
+            sequelize.literal(
+              '(SELECT category_name FROM category WHERE product.category_id = category.id)'
+            ),
+            'category',
+          ],
+        ],
+      },
     });
     res.status(200).json(productData);
   } catch (err) {
@@ -23,7 +34,17 @@ router.get('/:id', async (req, res) => {
   try {
     const productData = await Product.findByPk(req.params.id, {
       // including associated categories and tags through the ProductTag model/table
-      include: [{ model: Category, model: Tag, through: ProductTag, as: "product_tags" }]
+      include: [{ model: Category, model: Tag, through: ProductTag, as: "tags" }],
+      attributes: {
+        include: [
+          [
+            sequelize.literal(
+              '(SELECT category_name FROM category WHERE product.category_id = category.id)'
+            ),
+            'category',
+          ],
+        ],
+      },
     });
 
     if(!productData) {
